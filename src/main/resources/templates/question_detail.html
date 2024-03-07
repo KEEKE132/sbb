@@ -38,7 +38,7 @@
     <h5 class="border-bottom my-3 py-2"
         th:text="|${#lists.size(question.answerList)}개의 답변이 있습니다.|"></h5>
     <!-- 답변 반복 시작 -->
-    <div class="card my-3" th:each="answer : ${question.answerList}">
+    <div class="card my-3" th:each="answer, loop : ${pagingA}">
         <a th:id="|answer_${answer.id}|"></a>
         <div class="card-body" style="background: #2b2f32">
             <div class="card-text" th:utext="${@commonUtil.markdown(answer.content)}" style="color: white"></div>
@@ -79,6 +79,33 @@
         <textarea sec:authorize="isAuthenticated()" th:field="*{content}" class="form-control" rows="10"></textarea>
         <input type="submit" value="답변등록" class="btn btn-primary my-2">
     </form>
+
+    <!-- 페이징처리 시작 -->
+    <div th:if="${!pagingA.isEmpty()}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${!pagingA.hasPrevious} ? 'disabled'">
+                <a class="page-link"
+                   href="javascript:void(0)" th:data-page="${pagingA.number-1}">
+                    <span>이전</span>
+                </a>
+            </li>
+            <li th:each="page: ${#numbers.sequence(0, pagingA.totalPages-1)}"
+                th:if="${page >= pagingA.number-5 and page <= pagingA.number+5}"
+                th:classappend="${page == pagingA.number} ? 'active'"
+                class="page-item">
+                <a th:text="${page}" class="page-link" href="javascript:void(0)" th:data-page="${page}"></a>
+            </li>
+            <li class="page-item" th:classappend="${!pagingA.hasNext} ? 'disabled'">
+                <a class="page-link" href="javascript:void(0)" th:data-page="${pagingA.number+1}">
+                    <span>다음</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <!-- 페이징처리 끝 -->
+    <form th:action="@{|/question/detail/${question.id}|}" method="get" id="pageForm">
+        <input type="hidden" id="pageA" name="pageA" th:value="${pagingA.number}">
+    </form>
 </div>
 <script layout:fragment="script" type='text/javascript'>
     const delete_elements = document.getElementsByClassName("delete");
@@ -95,6 +122,13 @@
             if(confirm("정말로 추천하시겠습니까?")) {
                 location.href = this.dataset.uri;
             };
+        });
+    });
+    const page_elements = document.getElementsByClassName("page-link");
+    Array.from(page_elements).forEach(function(element) {
+        element.addEventListener('click', function() {
+            document.getElementById('pageA').value = this.dataset.page;
+            document.getElementById('pageForm').submit();
         });
     });
 </script>
