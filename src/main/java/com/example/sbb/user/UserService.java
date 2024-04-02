@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -33,9 +34,9 @@ public class UserService {
             throw new DataNotFoundException("siteuser not found");
         }
     }
-
     public void passwordUpdate(String username, String newPassword){
         SiteUser siteUser = userRepository.findByusername(username).get();
-        siteUser.updatePassword(passwordEncoder.encode(newPassword));
+        siteUser.setPassword(passwordEncoder.encode(newPassword));
+        this.userRepository.save(siteUser);
     }
 }

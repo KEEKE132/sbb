@@ -20,7 +20,4 @@ public class SiteUser {
     @Column(unique = true)
     private String email;
 
-    public void updatePassword(String newPassword){
-        this.password=newPassword;
-    }
 }

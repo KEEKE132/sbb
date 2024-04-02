@@ -3,13 +3,17 @@ package com.example.sbb.user;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.security.Principal;
 
 @RequiredArgsConstructor
 @Controller
@@ -53,28 +57,31 @@ public class UserController {
         return "login_form";
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/passwordUpdate")
     public String passwordUpdate(UserPasswordUpdateForm userPasswordUpdateForm){return "passwordUpdate_form";}
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("passwordUpdate")
-    public String passwordUpdate(@Valid UserPasswordUpdateForm userPasswordUpdateForm, BindingResult bindingResult, @AuthenticationPrincipal SiteUser siteUser){
+    public String passwordUpdate(@Valid UserPasswordUpdateForm userPasswordUpdateForm, BindingResult bindingResult, @AuthenticationPrincipal User user){
         if(bindingResult.hasErrors()){
             return "passwordUpdate_form";
         }
-        if(!passwordEncoder.matches(userPasswordUpdateForm.getCurrentPassword(),userService.getUser(siteUser.getUsername()).getPassword())){
+        if(!passwordEncoder.matches(userPasswordUpdateForm.getCurrentPassword(),userService.getUser(user.getUsername()).getPassword())){
             bindingResult.rejectValue("currentPassword","passwordIncorrect","현재 비밀번호가 일치하지 않습니다.");
+            return "passwordUpdate_form";
         }
         if(!userPasswordUpdateForm.getNewPassword().equals(userPasswordUpdateForm.getNewPassword2())){
-            bindingResult.rejectValue("password2","passwordIncorrect","비밀번호 확인이 일치하지 않습니다.");
+            bindingResult.rejectValue("newPassword2","passwordIncorrect","비밀번호 확인이 일치하지 않습니다.");
             return "passwordUpdate_form";
         }
         try{
-            userService.passwordUpdate(siteUser.getUsername(), userPasswordUpdateForm.getNewPassword());
+            userService.passwordUpdate(user.getUsername(), userPasswordUpdateForm.getNewPassword());
         }catch (Exception e){
             e.printStackTrace();
             bindingResult.reject("updateFailed",e.getMessage());
             return "passwordUpdate_form";
         }
-        return "redirect:/";   
+        return "redirect:/user/logout";
     }
 }
