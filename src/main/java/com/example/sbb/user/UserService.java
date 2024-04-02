@@ -33,4 +33,9 @@ public class UserService {
             throw new DataNotFoundException("siteuser not found");
         }
     }
+
+    public void passwordUpdate(String username, String newPassword){
+        SiteUser siteUser = userRepository.findByusername(username).get();
+        siteUser.updatePassword(passwordEncoder.encode(newPassword));
+    }
 }

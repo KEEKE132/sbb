@@ -3,6 +3,7 @@ package com.example.sbb.user;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,5 +48,30 @@ public class UserController {
     @GetMapping("/login")
     public String login(){
         return "login_form";
+    }
+
+    @GetMapping("/passwordUpdate")
+    public String passwordUpdate(UserPasswordUpdateForm userPasswordUpdateForm){return "passwordUpdate_form";}
+
+    @PostMapping("passwordUpdate")
+    public String passwordUpdate(@Valid UserPasswordUpdateForm userPasswordUpdateForm, BindingResult bindingResult, @AuthenticationPrincipal SiteUser siteUser){
+        if(bindingResult.hasErrors()){
+            return "passwordUpdate_form";
+        }
+        if(!userPasswordUpdateForm.getCurrentPassword().equals(userService.getUser(siteUser.getUsername()).getPassword())){
+            bindingResult.rejectValue("currentPassword","passwordIncorrect","현재 비밀번호가 일치하지 않습니다.");
+        }
+        if(!userPasswordUpdateForm.getNewPassword().equals(userPasswordUpdateForm.getNewPassword2())){
+            bindingResult.rejectValue("password2","passwordIncorrect","비밀번호 확인이 일치하지 않습니다.");
+            return "passwordUpdate_form";
+        }
+        try{
+            userService.passwordUpdate(siteUser.getUsername(), userPasswordUpdateForm.getNewPassword());
+        }catch (Exception e){
+            e.printStackTrace();
+            bindingResult.reject("updateFailed",e.getMessage());
+            return "passwordUpdate_form";
+        }
+        return "redirect:/";   
     }
 }
