@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class UserController {
 
     private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
+
 
     @GetMapping("/signup")
     public String signup(UserCreateForm userCreateForm){
@@ -58,7 +61,7 @@ public class UserController {
         if(bindingResult.hasErrors()){
             return "passwordUpdate_form";
         }
-        if(!userPasswordUpdateForm.getCurrentPassword().equals(userService.getUser(siteUser.getUsername()).getPassword())){
+        if(!passwordEncoder.matches(userPasswordUpdateForm.getCurrentPassword(),userService.getUser(siteUser.getUsername()).getPassword())){
             bindingResult.rejectValue("currentPassword","passwordIncorrect","현재 비밀번호가 일치하지 않습니다.");
         }
         if(!userPasswordUpdateForm.getNewPassword().equals(userPasswordUpdateForm.getNewPassword2())){
